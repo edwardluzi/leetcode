@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L030 Substring with Concatenation of All Words", "L030 Substring with Concatenation of All Words\L030 Substring with Concatenation of All Words.vcxproj", "{7B27E25E-39CF-4924-9BFC-F94F5AD50ADF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L174 Dungeon Game", "L174 Dungeon Game\L174 Dungeon Game.vcxproj", "{AF7158E4-BF59-4B9F-9536-C04ADB2F931A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L321 Create Maximum Number", "L321 Create Maximum Number\L321 Create Maximum Number.vcxproj", "{B794C887-ACC0-4050-92EE-34E8A4A125C1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L140 Word Break II", "L140 Word Break II\L140 Word Break II.vcxproj", "{C6AC6F32-4190-453C-9835-F182C6441816}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L214 Shortest Palindrome", "L214 Shortest Palindrome\L214 Shortest Palindrome.vcxproj", "{9FBFEF4E-6788-4BA5-97FF-FC92CFE982C2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L212 Word Search II", "L212 Word Search II\L212 Word Search II.vcxproj", "{4D9DB7B1-02FC-4D85-9991-E73EC7FB4294}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B27E25E-39CF-4924-9BFC-F94F5AD50ADF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7B27E25E-39CF-4924-9BFC-F94F5AD50ADF}.Debug|Win32.Build.0 = Debug|Win32
+		{7B27E25E-39CF-4924-9BFC-F94F5AD50ADF}.Release|Win32.ActiveCfg = Release|Win32
+		{7B27E25E-39CF-4924-9BFC-F94F5AD50ADF}.Release|Win32.Build.0 = Release|Win32
+		{AF7158E4-BF59-4B9F-9536-C04ADB2F931A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AF7158E4-BF59-4B9F-9536-C04ADB2F931A}.Debug|Win32.Build.0 = Debug|Win32
+		{AF7158E4-BF59-4B9F-9536-C04ADB2F931A}.Release|Win32.ActiveCfg = Release|Win32
+		{AF7158E4-BF59-4B9F-9536-C04ADB2F931A}.Release|Win32.Build.0 = Release|Win32
+		{B794C887-ACC0-4050-92EE-34E8A4A125C1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B794C887-ACC0-4050-92EE-34E8A4A125C1}.Debug|Win32.Build.0 = Debug|Win32
+		{B794C887-ACC0-4050-92EE-34E8A4A125C1}.Release|Win32.ActiveCfg = Release|Win32
+		{B794C887-ACC0-4050-92EE-34E8A4A125C1}.Release|Win32.Build.0 = Release|Win32
+		{C6AC6F32-4190-453C-9835-F182C6441816}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C6AC6F32-4190-453C-9835-F182C6441816}.Debug|Win32.Build.0 = Debug|Win32
+		{C6AC6F32-4190-453C-9835-F182C6441816}.Release|Win32.ActiveCfg = Release|Win32
+		{C6AC6F32-4190-453C-9835-F182C6441816}.Release|Win32.Build.0 = Release|Win32
+		{9FBFEF4E-6788-4BA5-97FF-FC92CFE982C2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9FBFEF4E-6788-4BA5-97FF-FC92CFE982C2}.Debug|Win32.Build.0 = Debug|Win32
+		{9FBFEF4E-6788-4BA5-97FF-FC92CFE982C2}.Release|Win32.ActiveCfg = Release|Win32
+		{9FBFEF4E-6788-4BA5-97FF-FC92CFE982C2}.Release|Win32.Build.0 = Release|Win32
+		{4D9DB7B1-02FC-4D85-9991-E73EC7FB4294}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4D9DB7B1-02FC-4D85-9991-E73EC7FB4294}.Debug|Win32.Build.0 = Debug|Win32
+		{4D9DB7B1-02FC-4D85-9991-E73EC7FB4294}.Release|Win32.ActiveCfg = Release|Win32
+		{4D9DB7B1-02FC-4D85-9991-E73EC7FB4294}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
