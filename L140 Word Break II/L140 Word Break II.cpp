@@ -212,6 +212,20 @@ public:
 	}
 };
 
+void test2(string)
+{
+	string list2[] = { "a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa", "aaaaaaaaa", "aaaaaaaaaa" };
+
+	unordered_set<string> dict(list2, list2 + sizeof(list2) / sizeof(string));
+
+
+	string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+	vector<string> result = Solution::wordBreak(s, dict);
+
+	Solution::print(result);
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	unordered_set<string> dict;
@@ -228,20 +242,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	Solution::print(result);
 
-	string list2[] = { "a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa", "aaaaaaaaa", "aaaaaaaaaa" };
 
-	dict.clear();
-
-	for (int i = 0; i < sizeof(list2) / sizeof(string); i++)
-	{
-		dict.insert(list2[i]);
-	}
-
-	string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-	result = Solution::wordBreak(s, dict);
-
-	Solution::print(result);
 
 	return 0;
 }
