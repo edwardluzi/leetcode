@@ -46,17 +46,17 @@ public class Solution
 			int pos = queue.removeFirst();
 			int dist = minCuts[pos] + 1;
 
-			for (int stop = pos + 1; stop <= len; stop++)
+			for (int stop = pos; stop < len; stop++)
 			{
-				if (this.pattern[pos][stop - 1])
+				if (this.pattern[pos][stop])
 				{
-					if (minCuts[stop] > dist)
+					if (minCuts[stop + 1] > dist)
 					{
-						minCuts[stop] = dist;
+						minCuts[stop + 1] = dist;
 
-						if (stop != len)
+						if (stop + 1 != len)
 						{
-							queue.addLast(stop);
+							queue.addLast(stop + 1);
 						}
 					}
 				}
