@@ -1,9 +1,13 @@
 #include "stdafx.h"
 
-struct ListNode {
+struct ListNode
+{
 	int val;
 	ListNode *next;
-	ListNode(int x) : val(x), next(NULL) {}
+	explicit ListNode(int x)
+		:val(x), next(NULL)
+	{
+	}
 };
 
 class Solution
@@ -26,9 +30,7 @@ public:
 			if (current->val < x)
 			{
 				remove(head, last, current);
-
 				current->next = NULL;
-
 				append(smallHead, smallLast, current);
 			}
 			else
@@ -40,58 +42,9 @@ public:
 		}
 
 		current = head;
-
-		while (current != NULL)
-		{
-			append(smallHead, smallLast, current);
-
-			current = current->next;
-		}
+		append(smallHead, smallLast, current);
 
 		return smallHead;
-	}
-
-	static ListNode* createListNode(int list[], int size)
-	{
-		ListNode* head = NULL;
-		ListNode* current = NULL;
-
-		for (int index = 0; index < size; index++)
-		{
-			if (head == NULL)
-			{
-				head = new ListNode(list[index]);
-				current = head;
-			}
-			else
-			{
-				current->next = new ListNode(list[index]);
-				current = current->next;
-			}
-		}
-
-		return head;
-	}
-
-	static void Print(ListNode* head, char* name)
-	{
-		if (name != NULL)
-		{
-			printf(("%s: "), name);
-		}
-
-		while (head != NULL)
-		{
-			printf(("%d"), head->val);
-			head = head->next;
-
-			if (head != NULL)
-			{
-				printf(("->"));
-			}
-		}
-
-		printf(("\n"));
 	}
 
 private:
@@ -122,18 +75,61 @@ private:
 	}
 };
 
+static ListNode* createListNode(int list[], int size)
+{
+	ListNode* head = NULL;
+	ListNode* current = NULL;
+
+	for (int index = 0; index < size; index++)
+	{
+		if (head == NULL)
+		{
+			head = new ListNode(list[index]);
+			current = head;
+		}
+		else
+		{
+			current->next = new ListNode(list[index]);
+			current = current->next;
+		}
+	}
+
+	return head;
+}
+
+static void print(char* name, ListNode* head)
+{
+	if (name != NULL)
+	{
+		printf(("%s: "), name);
+	}
+
+	while (head != NULL)
+	{
+		printf(("%d"), head->val);
+
+		head = head->next;
+
+		if (head != NULL)
+		{
+			printf(("->"));
+		}
+	}
+
+	printf(("\n"));
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int list[] = {4, 1, 4, 3, 2, 5, 2 };
-	
-	ListNode* head = Solution::createListNode(list, sizeof(list) / sizeof(int));
+	int list[] = { 4, 1, 4, 3, 2, 5, 2 };
 
-	Solution::Print(head, ("Original"));
+	ListNode* head = createListNode(list, sizeof(list) / sizeof(int));
+
+	print("Original", head);
 
 	ListNode* newHead = Solution::partition(head, 3);
 
-	Solution::Print(newHead, ("New"));
+	print("New     ", newHead);
 
 	return 0;
 }
-

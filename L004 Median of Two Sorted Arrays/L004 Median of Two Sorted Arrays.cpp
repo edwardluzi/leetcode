@@ -1,18 +1,17 @@
-
 #include "stdafx.h"
 #include <vector>
 
 using namespace std;
 
-class Solution 
+class Solution
 {
 public:
 
 	static double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2)
 	{
-		int total = (int)nums1.size() + (int)nums2.size();
-		int mth = total / 2;
-		int count = 1;
+		size_t total = nums1.size() + nums2.size();
+		size_t mth = total / 2;
+		size_t count = 1;
 
 		if (mth * 2 == total)
 		{
@@ -22,10 +21,10 @@ public:
 
 		vector<int> merged;
 
-		int i = 0;
-		int j = 0;
-		int l1 = nums1.size();
-		int l2 = nums2.size();
+		size_t i = 0;
+		size_t j = 0;
+		size_t l1 = nums1.size();
+		size_t l2 = nums2.size();
 
 		while (i < l1 && j < l2 && merged.size() < mth + count)
 		{
@@ -64,28 +63,27 @@ public:
 	}
 };
 
+void test(int* anums1, int anumsLen1, int* anums2, int anumsLen2)
+{
+	vector<int> nums1(anums1, anums1 + anumsLen1);
+	vector<int> nums2(anums2, anums2 + anumsLen2);
+
+	double m = Solution::findMedianSortedArrays(nums1, nums2);
+
+	printf("%f\n", m);
+
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-	vector<int> num1;
-	vector<int> num2;
+	int nums1[] = { 1, 2, 3 };
+	int nums2[] = { 3, 4, 5, 6 };
 
-	num1.push_back(1);
-	num1.push_back(2);
-	num1.push_back(3);
-	num2.push_back(3);
-	num2.push_back(4);
-	num2.push_back(5);
-	num2.push_back(6);
+	test(nums1, sizeof(nums1) / sizeof(int), nums2, sizeof(nums2) / sizeof(int));
 
-	
-	double d = Solution::findMedianSortedArrays(num1, num2);
+	int nums3[] = { 3, 4, 5, 6, 7 };
 
-
-	num2.push_back(7);
-
-	d = Solution::findMedianSortedArrays(num1, num2);
-
+	test(nums1, sizeof(nums1) / sizeof(int), nums3, sizeof(nums3) / sizeof(int));
 
 	return 0;
 }
-

@@ -29,5 +29,11 @@
     <ClCompile Include="L212 Word Search II.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Test3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Test4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

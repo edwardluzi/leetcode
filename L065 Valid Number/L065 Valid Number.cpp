@@ -1,20 +1,14 @@
 #include "stdafx.h"
 
-#include <algorithm> 
-#include <cctype>
-#include <functional> 
-#include <locale>
+#include <stddef.h>
+#include <cstdio>
 #include <string>
 
 using namespace std;
 
 enum State
 {
-	Unknown,
-	FirstNumber,
-	FollowedNumber,
-	FirstDecimal,
-	FollowedDecimal
+	Unknown, FirstNumber, FollowedNumber, FirstDecimal, FollowedDecimal
 };
 
 class Solution
@@ -26,7 +20,7 @@ public:
 		string decimal;
 		string exponent;
 
-		s = trim(s);
+		trim(s);
 
 		if (!readDecimal(s, decimal))
 		{
@@ -64,116 +58,157 @@ public:
 
 	static bool readInteger(string& s, string& value, bool allowMinus, bool allowPlus)
 	{
-		static string number = "0123456789";
-
 		State state = Unknown;
-		char token = 0;
+		size_t length = s.length();
+		size_t index = 0;
 
-		while (s.length() > 0)
+		for (; index < length; index++)
 		{
-			token = s.at(0);
+			char token = s[index];
 
 			switch (state)
 			{
-			case Unknown:
-			{
-							if (token == '-' && allowMinus)
+				case Unknown:
+				{
+					switch (token)
+					{
+						case '-':
+						{
+							if (!allowMinus)
 							{
-								state = FirstNumber;
-								s.erase(s.begin());
-								value.push_back(token);
+								return false;
 							}
-							else if (token == '+' && allowPlus)
+							state = FirstNumber;
+							value.push_back(token);
+							break;
+						}
+						case '+':
+						{
+							if (!allowPlus)
 							{
-								state = FirstNumber;
-								s.erase(s.begin());
-								value.push_back(token);
+								return false;
 							}
-							else if (number.find(token) != string::npos)
+							state = FirstNumber;
+							value.push_back(token);
+							break;
+						}
+						default:
+						{
+							if (isNumber(token))
 							{
 								state = FollowedNumber;
-								s.erase(s.begin());
 								value.push_back(token);
 							}
 							else
 							{
 								return false;
 							}
+						}
+					}
 
-							break;
-			}
-			case FirstNumber:
-			{
-							if (number.find(token) != string::npos)
-							{
-								state = FollowedNumber;
-								s.erase(s.begin());
-								value.push_back(token);
-							}
-							else
-							{
-								return false;
-							}
+					break;
+				}
+				case FirstNumber:
+				{
+					if (isNumber(token))
+					{
+						state = FollowedNumber;
+						value.push_back(token);
+					}
+					else
+					{
+						return false;
+					}
 
-							break;
-			}
-			case FollowedNumber:
-			{
-							if (number.find(token) != string::npos)
-							{
-								state = FollowedNumber;
-								s.erase(s.begin());
-								value.push_back(token);
-							}
-							else
-							{
-								return true;
-							}
-							break;
-			}
+					break;
+				}
+				case FollowedNumber:
+				{
+					if (isNumber(token))
+					{
+						state = FollowedNumber;
+						value.push_back(token);
+					}
+					else
+					{
+						s.erase(0, index);
+						return true;
+					}
+
+					break;
+				}
 			}
 		}
+
+		s.erase(0, index);
 
 		return state == FollowedNumber;
 	}
 
 	static bool readDecimal(string& s, string& value)
 	{
-		static string number = "0123456789";
-
 		State state = Unknown;
-		char token = 0;
+		size_t length = s.length();
+		size_t index = 0;
 
-		while (s.length() > 0)
+		for (; index < length; index++)
 		{
-			token = s.at(0);
+			char token = s[index];
 
 			switch (state)
 			{
-			case Unknown:
-			{
-							if (token == '+')
-							{
-								state = FirstNumber;
-								s.erase(s.begin());
-								value.push_back(token);
-							}
-							else if (token == '-')
-							{
-								state = FirstNumber;
-								s.erase(s.begin());
-								value.push_back(token);
-							}
-							else if (token == '.')
-							{
-								state = FirstDecimal;
-								s.erase(s.begin());
-								value.push_back(token);
-							}
-							else if (number.find(token) != string::npos)
+				case Unknown:
+				{
+					switch (token)
+					{
+						case '+':
+						{
+							state = FirstNumber;
+							value.push_back(token);
+							break;
+						}
+						case '-':
+						{
+							state = FirstNumber;
+							value.push_back(token);
+							break;
+						}
+						case '.':
+						{
+							state = FirstDecimal;
+							value.push_back(token);
+							break;
+						}
+						default:
+						{
+							if (isNumber(token))
 							{
 								state = FollowedNumber;
-								s.erase(s.begin());
+								value.push_back(token);
+							}
+							else
+							{
+								return false;
+							}
+						}
+					}
+					break;
+				}
+				case FirstNumber:
+				{
+					switch (token)
+					{
+						case '.':
+						{
+							state = FirstDecimal;
+							value.push_back(token);
+							break;
+						}
+						default:
+						{
+							if (isNumber(token))
+							{
+								state = FollowedNumber;
 								value.push_back(token);
 							}
 							else
@@ -182,122 +217,133 @@ public:
 							}
 
 							break;
-			}
-			case FirstNumber:
-			{
-								if (number.find(token) != string::npos)
-								{
-									state = FollowedNumber;
-									s.erase(s.begin());
-									value.push_back(token);
-								}
-								else if (token == '.')
-								{
-									state = FirstDecimal;
-									s.erase(s.begin());
-									value.push_back(token);
-								}
-								else
-								{
-									return false;
-								}
+						}
+					}
 
-								break;
-			}
-			case FollowedNumber:
-			{
-								   if (number.find(token) != string::npos)
-								   {
-									   state = FollowedNumber;
-									   s.erase(s.begin());
-									   value.push_back(token);
-								   }
-								   else if (token == '.')
-								   {
-									   state = FirstDecimal;
-									   s.erase(s.begin());
-									   value.push_back(token);
-								   }
-								   else
-								   {
-									   return true;
-								   }
+					break;
+				}
+				case FollowedNumber:
+				{
+					switch (token)
+					{
+						case '.':
+						{
+							state = FirstDecimal;
+							value.push_back(token);
+							break;
+						}
+						default:
+						{
+							if (isNumber(token))
+							{
+								state = FollowedNumber;
+								value.push_back(token);
+							}
+							else
+							{
+								s.erase(0, index);
+								return true;
+							}
 
-								   break;
-			}
-			case FirstDecimal:
-			{
-								 if (number.find(token) != string::npos)
-								 {
-									 state = FollowedDecimal;
-									 s.erase(s.begin());
-									 value.push_back(token);
-								 }
-								 else if (token == '.')
-								 {
-									 return false;
-								 }
-								 else
-								 {
-									 return true;
-								 }
+							break;
+						}
+					}
 
-								 break;
-			}
-			case FollowedDecimal:
-			{
-									if (number.find(token) != string::npos)
-									{
-										state = FollowedDecimal;
-										s.erase(s.begin());
-										value.push_back(token);
-									}
-									else if (token == '.')
-									{
-										return false;
-									}
-									else
-									{
-										return true;
-									}
-									break;
-			}
+					break;
+				}
+				case FirstDecimal:
+				{
+					switch (token)
+					{
+						case '.':
+						{
+							return false;
+						}
+						default:
+						{
+							if (isNumber(token))
+							{
+								state = FollowedDecimal;
+								value.push_back(token);
+							}
+							else
+							{
+								s.erase(0, index);
+								return true;
+							}
+						}
+					}
+
+					break;
+				}
+				case FollowedDecimal:
+				{
+					switch (token)
+					{
+						case '.':
+						{
+							return false;
+						}
+						default:
+						{
+							if (isNumber(token))
+							{
+								state = FollowedDecimal;
+								value.push_back(token);
+							}
+
+							else
+							{
+								s.erase(0, index);
+								return true;
+							}
+
+							break;
+						}
+					}
+
+					break;
+				}
 			}
 		}
+
+		s.erase(0, index);
 
 		return state != Unknown;
 	}
 
-	// trim from start
-	static inline std::string &ltrim(std::string &s) {
-		s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(std::isspace))));
-		return s;
+	static inline bool isNumber(char c)
+	{
+		return c >= '0' && c <= '9';
 	}
 
-	// trim from end
-	static inline std::string &rtrim(std::string &s) {
-		s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
-		return s;
+	static inline void ltrim(string& s)
+	{
+		s.erase(0, s.find_first_not_of(' '));
 	}
 
-	// trim from both ends
-	static inline std::string &trim(std::string &s) {
-		return ltrim(rtrim(s));
+	static inline void rtrim(string& s)
+	{
+		s.erase(s.find_last_not_of(' ') + 1, s.length());
+	}
+
+	static inline void trim(string& s)
+	{
+		ltrim(s);
+		rtrim(s);
 	}
 };
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	string s = "0";
+	string s = " 0  ";
 	printf("%s ==> %s\n", s.c_str(), Solution::isNumber(s) ? "True" : "False");
-
 
 	s = " 0.1 ";
 	printf("%s ==> %s\n", s.c_str(), Solution::isNumber(s) ? "True" : "False");
 
 	s = "abc";
 	printf("%s ==> %s\n", s.c_str(), Solution::isNumber(s) ? "True" : "False");
-
 
 	s = "1 a";
 	printf("%s ==> %s\n", s.c_str(), Solution::isNumber(s) ? "True" : "False");

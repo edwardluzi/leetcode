@@ -1,37 +1,41 @@
-// ConsoleApplication2.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
 
 class Solution
 {
 public:
-	static int numTrees(int n)
+
+	Solution() :
+		mSize(0), mCache(0)
+	{
+	}
+
+	int numTrees(int n)
 	{
 		initCache(n);
-
 		return numTress(1, n);
 	}
 
 private:
 
-	static int size;
-	static int* cache;
+	int mSize;
+	int* mCache;
 
-	static void initCache(int n)
+private:
+
+	void initCache(int n)
 	{
-		if (cache != NULL)
+		if (mCache != NULL)
 		{
-			delete[]cache;
+			delete[] mCache;
 		}
 
-		size = n;
-		cache = new int[n];
+		mSize = n;
+		mCache = new int[n];
 
-		memset(cache, 0, sizeof(int)* n);
+		memset(mCache, 0, sizeof(int)* n);
 	}
 
-	static int numTress(int small, int big)
+	int numTress(int small, int big)
 	{
 		if (small >= big)
 		{
@@ -39,38 +43,32 @@ private:
 		}
 		else
 		{
-			if (cache[big - small] != 0)
+			if (mCache[big - small] != 0)
 			{
-				return cache[big - small];
+				return mCache[big - small];
 			}
 
 			int num = 0;
-			int left = 0;
-			int right = 0;
-
+		
 			for (int root = small; root <= big; root++)
 			{
-				left = numTress(small, root - 1);
-				right = numTress(root + 1, big);
-
-				num += (left * right);
+				num += (numTress(small, root - 1) * numTress(root + 1, big));
 			}
 
-			cache[big - small] = num;
+			mCache[big - small] = num;
 
 			return num;
 		}
 	}
 };
 
-int* Solution::cache = NULL;
-int Solution::size = 0;
-
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int num = Solution::numTrees(19);
+	Solution s;
 
-	while (1)
+	int num = s.numTrees(19);
+
+	for (;;)
 	{
 		printf("Please input a number, 0 to exit: ");
 		scanf_s("%d", &num);
@@ -80,7 +78,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 		}
 
-		printf("Total count of unique BST is: %d\n\n", Solution::numTrees(num));
+		printf("Total count of unique BST is: %d\n\n", s.numTrees(num));
 	}
 
 	return 0;

@@ -1,8 +1,9 @@
 #include "stdafx.h"
+
+#include <cstdio>
+#include <iterator>
 #include <string>
 #include <vector>
-#include <unordered_set>
-#include <unordered_map>
 
 using namespace std;
 
@@ -10,93 +11,80 @@ class Solution
 {
 public:
 
-	static 	vector<string> fullJustify(vector<string>& words, int maxWidth)
+	static vector<string> fullJustify(vector<string>& words, int maxWidth)
 	{
 		vector<string> justified;
-		
+
 		if (words.size() > 0)
 		{
-			vector<string> lineWords;
-			int lineLength = 0;
+			int length = 0;
+			vector<string> line;
 
-			for (vector<string>::iterator it = words.begin(); it != words.end(); it++)
+			for (vector<string>::iterator it = words.begin(); it != words.end(); ++it)
 			{
-				if (canAddMore(lineWords, lineLength, *it, maxWidth))
+				if (canAddMore(length, line.size(), it->length(), maxWidth))
 				{
-					lineWords.push_back(*it);
-					lineLength += (*it).length();
+					line.push_back(*it);
+					length += it->length();
 				}
 				else
 				{
-					justified.push_back(format(maxWidth, lineWords, lineLength));
+					justified.push_back(distribute(line, length, maxWidth));
 
-					lineWords.clear();
-
-					lineWords.push_back(*it);
-					lineLength = (*it).length();
+					line.clear();
+					line.push_back(*it);
+					length = it->length();
 				}
 			}
 
-			vector<int> spaces(lineWords.size(), 1);
-			justified.push_back(format(maxWidth, lineWords, spaces));
+			vector<int> spaces(line.size(), 1);
+			justified.push_back(format(line, spaces, maxWidth));
 		}
 
 		return justified;
 	}
 
-	static string format(int maxWidth, vector<string>& words, int length)
+	static string distribute(vector<string>& words, int length, int maxWidth)
 	{
 		string text;
 
 		if (words.size() == 1)
 		{
 			text = words[0];
-			text.insert(text.end(), maxWidth - length,' ');
+			text.insert(text.end(), maxWidth - length, ' ');
 		}
 		else
 		{
-			double avg = (float)(maxWidth - length) / (float)(words.size() - 1);
-			int ravg = round(avg);
+			float avg = (float)(maxWidth - length) / (float)(words.size() - 1);
+			int ravg = (int)round(avg);
 
-			if (ravg * (words.size() - 1) == maxWidth - length)
+			if (ravg * ((int)words.size() - 1) == maxWidth - length)
 			{
 				vector<int> spaces(words.size(), ravg);
-				text = format(maxWidth, words, spaces);
+				text = format(words, spaces, maxWidth);
 			}
 			else
 			{
-				int num = round((avg - (int)avg) * (words.size() - 1));
-
-				vector<int> spaces(num, ceil(avg));
+				int num = (int)round((avg - (int)avg) * (words.size() - 1));
+				vector<int> spaces(num, (int)ceil(avg));
 				spaces.insert(spaces.end(), words.size() - num, (int)avg);
-				text = format(maxWidth, words, spaces);
+				text = format(words, spaces, maxWidth);
 			}
 		}
 
 		return text;
 	}
 
-	static string format(int maxWidth, vector<string>& words, vector<int>& spaces)
+	static string format(vector<string>& words, vector<int>& spaces, int maxWidth)
 	{
-		string text;
-		bool firstWord = true;
-
+		vector<string>::iterator itw = words.begin();
 		vector<int>::iterator its = spaces.begin();
+		string text = *itw;
 
-		for (vector<string>::iterator it = words.begin(); it != words.end(); it++)
+		for (++itw; itw != words.end(); ++itw, ++its)
 		{
-			if (firstWord)
-			{
-				text = *it;
-				firstWord = false;
-			}
-			else
-			{
-				text.insert(text.end(), *its, ' ');
-				text.insert(text.end(), (*it).begin(), (*it).end());
-
-				its++;
-			}
+			text.insert(text.end(), *its, ' ');
+			text.insert(text.end(), itw->begin(), itw->end());
 		}
 
 		int length = text.length();
@@ -109,35 +97,29 @@ public:
 		return text;
 	}
 
-	inline static bool canAddMore(vector<string>& line, int lineLength, string& word, int maxWidth)
+	inline static bool canAddMore(int length, int wordCout, int added, int maxWidth)
 	{
-		return lineLength + line.size() + word.length() <= maxWidth;
-	}
-
-	static void print(vector<string>& vectors)
-	{
-		for (vector<string>::iterator it = vectors.begin(); it != vectors.end(); it++)
-		{
-			printf("%s\n", (*it).c_str());
-		}
+		return length + wordCout + added <= maxWidth;
 	}
 };
+
+void print(vector<string>& vectors)
+{
+	for (vector<string>::iterator it = vectors.begin(); it != vectors.end(); ++it)
+	{
+		printf("%s\n", (*it).c_str());
+	}
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	string ws[] = { "This", "is", "an", "example", "of", "text", "justification." };
 
-	vector<string> words;
+	vector<string> words(ws, ws + sizeof(ws) / sizeof(string));
 
-	for (int i = 0; i < sizeof(ws) / sizeof(string); i++)
-	{
-		words.push_back(ws[i]);
-	}
+	vector<string> results = Solution::fullJustify(words, 16);
 
-	vector<string>  results = Solution::fullJustify(words, 16);
-
-	Solution::print(results);
+	print(results);
 
 	return 0;
 }
-

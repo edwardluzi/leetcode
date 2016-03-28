@@ -15,12 +15,18 @@ struct LinkedNode
 	int value;
 	LinkedNode* prev;
 	LinkedNode* next;
-	LinkedNode() : key(0), value(0), prev(NULL), next(NULL){}
-	LinkedNode(int k, int v) : key(k), value(v), prev(NULL), next(NULL){}
+	LinkedNode() :
+		key(0), value(0), prev(NULL), next(NULL)
+	{
+	}
+	LinkedNode(int k, int v) :
+		key(k), value(v), prev(NULL), next(NULL)
+	{
+	}
 };
 
-class LRUCache{
-
+class LRUCache
+{
 private:
 
 	int mCapacity;
@@ -31,14 +37,15 @@ private:
 
 public:
 
-	LRUCache(int capacity) {
+	explicit LRUCache(int capacity)
+	{
 		mCapacity = capacity;
 		mHeader = NULL;
 		mTail = NULL;
 	}
 
-	int get(int key) {
-
+	int get(int key)
+	{
 		unordered_map<int, LinkedNode*>::iterator it = mData.find(key);
 
 		if (it != mData.end())
@@ -147,7 +154,6 @@ public:
 	}
 };
 
-
 int _tmain(int argc, _TCHAR* argv[])
 {
 	LRUCache cache(3);
@@ -160,8 +166,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	cache.get(1);
 
-
-
 	LRUCache c1(2);
 
 	c1.set(2, 1);
@@ -173,4 +177,3 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	return 0;
 }
-

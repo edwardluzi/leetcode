@@ -1,8 +1,7 @@
-
 #include "stdafx.h"
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -12,13 +11,15 @@ public:
 
 	static vector<vector<int>> threeSum(vector<int>& nums)
 	{
+		vector<vector<int>> results;
+
 		int sum1 = 0;
 		int sum2 = 0;
-		vector<vector<int>> results;
+		size_t size = nums.size();
 
 		sort(nums.begin(), nums.end());
 
-		for (int i = 0; i < (int)nums.size()-2; i++)
+		for (size_t i = 0; i < size - 2; i++)
 		{
 			if (nums[i] > 0)
 			{
@@ -30,7 +31,7 @@ public:
 				continue;
 			}
 
-			for (int j = i + 1; j < (int)nums.size()-1; j++)
+			for (size_t j = i + 1; j < size - 1; j++)
 			{
 				sum1 = nums[i] + nums[j];
 
@@ -44,7 +45,7 @@ public:
 					continue;
 				}
 
-				for (int k = j + 1; k < (int)nums.size(); k++)
+				for (size_t k = j + 1; k < size; k++)
 				{
 					if (k > j + 1 && nums[k] == nums[k - 1])
 					{
@@ -75,53 +76,40 @@ public:
 
 		return results;
 	}
-
-	static void print(vector<vector<int>>& vectors)
-	{
-		bool firstNumber = true;
-
-		printf("Total: %d\n", vectors.size());
-
-		for (vector<vector<int>>::iterator it1 = vectors.begin(); it1 != vectors.end(); it1++)
-		{
-			firstNumber = true;
-
-			printf("[");
-
-			for (vector<int>::iterator it2 = (*it1).begin(); it2 != (*it1).end(); it2++)
-			{
-				if (firstNumber)
-				{
-					printf("%d", *it2);
-					firstNumber = false;
-				}
-				else
-				{
-					printf(", %d", *it2);
-				}
-			}
-
-			printf("]\n");
-		}
-	}
 };
 
+void print(vector<vector<int>>& vectors)
+{
+	printf("Total: %d\n", (int)vectors.size());
+
+	for (vector<vector<int>>::iterator it1 = vectors.begin(); it1 != vectors.end(); ++it1)
+	{
+		printf("[");
+
+		vector<int>::iterator it2 = (*it1).begin();
+
+		if (it2 != it1->end())
+		{
+			printf("%d", *it2);
+
+			++it2;
+		}
+
+		for (; it2 != (*it1).end(); ++it2)
+		{
+			printf(", %d", *it2);
+		}
+
+		printf("]\n");
+	}
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	vector<int> s;
-
-	s.push_back(-1);
-	s.push_back(0);
-	s.push_back(1);
-	s.push_back(2);
-	s.push_back(-1);
-	s.push_back(-4);
-
-	vector<vector<int>> r = Solution::threeSum(s);
-
-	Solution::print(r);
+	int nums[] = { -1, 0, 1, 2, -1, -4 };
+	vector<int> v(nums, nums + sizeof(nums) / sizeof(int));
+	vector<vector<int>> r = Solution::threeSum(v);
+	print(r);
 
 	return 0;
 }
-

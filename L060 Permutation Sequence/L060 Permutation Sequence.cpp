@@ -18,70 +18,57 @@ public:
 		k--;
 
 		vector<int> nums;
-		vector<int> permutation;
+		vector<int> facts;
 
 		for (int i = 1; i <= n; i++)
 		{
 			nums.push_back(i);
 		}
 
-		int index = 0;
-		int fact = 0;
+		calcFacts(facts, n);
+
+		string result;
+		char alphabet[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 		for (int i = n; i >= 1; i--)
 		{
-			fact = factorial(i - 1);
-			index = k / fact;
+			int fact = facts[i - 1];
+			int index = k / fact;
+
+			result.push_back(alphabet[nums[index]]);
+			nums.erase(nums.begin() + index);
 
 			k = k % fact;
-
-			permutation.push_back(nums[index]);
-
-			nums.erase(nums.begin() + index);
 		}
 
-		return toString(permutation);
+		return result;
 	}
 
-	static string toString(vector<int>& v)
-	{
-		char temp[16];
-		string text;
-
-		for (vector<int>::iterator it = v.begin(); it != v.end(); it++)
-		{
-			memset(temp, 0, sizeof(temp));
-
-			text = text + __itoa(*it, 10);
-		}
-
-		return text;
-	}
-
-	inline static int factorial(int n)
-	{
-		int fact = 1;
-
-		for (int i = n; i >= 1; i--)
-		{
-			fact *= i;
-		}
-
-		return fact;
-	}
-
-	static string __itoa(int val, int base)
+	static inline const char* itoa(int val)
 	{
 		static char buf[32] = { 0 };
 
 		int index = 30;
 
-		for (; val && index; --index, val /= base)
+		for (; val && index; --index, val /= 10)
 		{
-			buf[index] = "0123456789abcdef"[val % base];
+			buf[index] = "0123456789"[val % 10];
 		}
 
 		return &buf[index + 1];
+	}
+
+	static inline void calcFacts(vector<int>& facts, int n)
+	{
+		int fact = 1;
+
+		facts.push_back(1);
+
+		for (int i = 1; i <= n; i++)
+		{
+			fact *= i;
+			facts.push_back(fact);
+		}
 	}
 };
 
@@ -91,11 +78,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	for (int i = 1; i <= 6; i++)
 	{
-		s = Solution::getPermutation(3, i);
+		s = Solution::getPermutation(9, i);
 
 		printf("%s\n", s.c_str());
 	}
 
 	return 0;
 }
-

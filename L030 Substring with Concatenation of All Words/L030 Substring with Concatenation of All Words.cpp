@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include <algorithm>
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 using namespace std;
 
@@ -19,102 +19,97 @@ public:
 			unordered_map<string, int> indices;
 			buildIndices(words, indices);
 
-			int pos = 0;
-			int wordLen = words[0].length();
-			int subLen = wordLen * words.size();
+			size_t wordLen = words[0].length();
+			size_t subLen = wordLen * words.size();
 
-			for (; pos <= (int)s.length() - subLen;)
+			if (subLen <= s.length())
 			{
-				pos = findSubstring(s, pos, wordLen, subLen, words, indices);
+				size_t pos = 0;
+				size_t last = s.length() - subLen;
 
-				if (pos == -1)
+				for (; pos <= last; pos++)
 				{
-					break;
-				}
+					pos = findSubstring(s, pos, wordLen, subLen, words, indices);
 
-				positions.push_back(pos);
-				pos++;
+					if (pos == string::npos)
+					{
+						break;
+					}
+
+					positions.push_back(pos);
+				}
 			}
 		}
 
 		return positions;
 	}
 
-	static int findSubstring(string& s, int start, int wordLen, int subLen,
-		vector<string>& words, unordered_map<string, int>& indices)
+	static size_t findSubstring(string& s, size_t start, size_t wordLen, size_t subLen, vector<string>& words,
+		unordered_map<string, int>& indices)
 	{
-		int candidate = peekWord(s, start, wordLen, true, indices);
+		size_t count = words.size();
+		size_t lasts = s.length() - subLen;
+		size_t lastw = s.length() - wordLen;
+		size_t found = 1;
 
-		if (candidate == -1)
+		unordered_map<string, int>::iterator it;
+		unordered_map<string, int> copy = indices;
+
+		size_t candidate = peekWord(s, start, lastw, wordLen, true, copy, it);
+
+		if (candidate == string::npos)
 		{
-			return -1;
+			return string::npos;
 		}
 
-		int found = 1;
-		string word = s.substr(candidate, wordLen);
-		int count = words.size();
-		int next = candidate + wordLen;
+		it->second--;
 
-		unordered_map<string, int> copy;
-		unordered_map<string, int>::iterator it;
-
-		copy.insert(indices.begin(), indices.end());
-		copy.find(word)->second--;
+		size_t next = candidate + wordLen;
 
 		while (found < count)
 		{
-			next = peekWord(s, next, wordLen, false, indices);
+			next = peekWord(s, next, lastw, wordLen, false, copy, it);
 
-			if (next >= 0)
+			if (next != string::npos && it->second > 0)
 			{
-				word = s.substr(next, wordLen);
+				it->second--;
+				found++;
+				next += wordLen;
 
-				it = copy.find(word);
-
-				if (it != copy.end() && it->second > 0)
-				{
-					it->second--;
-					found++;
-					next += wordLen;
-
-					continue;
-				}
+				continue;
 			}
 
-			if (candidate + 1 > (int)s.length() - subLen)
+			candidate++;
+
+			if (candidate > lasts)
 			{
-				return -1;
+				return string::npos;
 			}
 
-			candidate = peekWord(s, candidate + 1, wordLen, true, indices);
+			copy = indices;
+			candidate = peekWord(s, candidate, lastw, wordLen, true, copy, it);
 
-			if (candidate == -1)
+			if (candidate == string::npos)
 			{
-				return -1;
+				return string::npos;
 			}
 
-			word = s.substr(candidate, wordLen);
-
-			copy.clear();
-			copy.insert(indices.begin(), indices.end());
-			copy.find(word)->second--;
-
+			it->second--;
 			found = 1;
-
 			next = candidate + wordLen;
 		}
 
-		return found == count ? candidate : -1;
+		return found == count ? candidate : string::npos;
 	}
 
-	inline static int peekWord(const string& s, int start, int wordLen,
-		bool forward, const unordered_map<string, int>& indices)
+	inline static size_t peekWord(const string& s, size_t start, size_t last, size_t wordLen, bool forward,
+		unordered_map<string, int>& indices, unordered_map<string, int>::iterator& it)
 	{
-		int last = s.length() - wordLen;
-
 		while (start <= last)
 		{
-			if (indices.find(s.substr(start, wordLen)) != indices.end())
+			it = indices.find(s.substr(start, wordLen));
+
+			if (it != indices.end())
 			{
 				return start;
 			}
@@ -125,15 +120,14 @@ public:
 			}
 			else
 			{
-				return -1;
+				return string::npos;
 			}
 		}
 
-		return -1;
+		return string::npos;
 	}
 
-	inline static void buildIndices(vector<string>& words,
-		unordered_map<string, int>& indices)
+	inline static void buildIndices(vector<string>& words, unordered_map<string, int>& indices)
 	{
 		for (string& w : words)
 		{
@@ -142,8 +136,7 @@ public:
 	}
 };
 
-void test(string& str, string* word, int wordSize, int* expected,
-	int expectedSize)
+void test(string& str, string* word, int wordSize, int* expected, int expectedSize)
 {
 	vector<string> words(word, word + wordSize);
 	vector<int> expecteds(expected, expected + expectedSize);
@@ -159,8 +152,7 @@ void test1()
 	int expected[] = { 0, 9 };
 	string str = "barfoothefoobarman";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
 void test2()
@@ -169,8 +161,7 @@ void test2()
 	int expected[] = { 0, 12 };
 	string str = "barfoothefoofoobarmanfooddc";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
 void test3()
@@ -179,8 +170,7 @@ void test3()
 	int expected[] = { 6, 9, 12 };
 	string str = "barfoofoobarthefoobarman";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
 void test4()
@@ -189,8 +179,7 @@ void test4()
 	int expected[] = { 8 };
 	string str = "wordgoodgoodgoodbestword";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
 void test5()
@@ -199,8 +188,7 @@ void test5()
 	int expected[] = { 3 };
 	string str = "acccaccaa";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
 void test6()
@@ -209,431 +197,276 @@ void test6()
 	int expected[] = { 1 };
 	string str = "ababaab";
 
-	test(str, words, sizeof(words) / sizeof(string), expected,
-		sizeof(expected) / sizeof(int));
+	test(str, words, sizeof(words) / sizeof(string), expected, sizeof(expected) / sizeof(int));
 }
 
+#pragma warning(suppress: 6262)
 void test7()
 {
-	string words[] =
-	{ 
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
-		"a", "a", "a", "a", "a", "a", "a" 
-	};
-	
-	string str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	string words[] = {
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a",
+		"a", "a", "a" };
+
+	string str =
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 	test(str, words, sizeof(words) / sizeof(string), NULL, 0);
 }
 
 void test8()
 {
-	string words[] =
-	{ 
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
-		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab",
-		"ba" 
-	};
-	string str = "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab";
+	string words[] = {
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba", "ab", "ba",
+		"ab", "ba" };
+	string str =
+		"abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab";
 
 	test(str, words, sizeof(words) / sizeof(string), NULL, 0);
 }

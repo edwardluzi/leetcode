@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../StopWatch.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -13,7 +14,6 @@ using namespace std;
 struct TrieNode
 {
 	bool isWord;
-	string word;
 	unordered_map<char, TrieNode*> nexts;
 	TrieNode() :
 		isWord(false)
@@ -23,155 +23,145 @@ struct TrieNode
 
 class Solution
 {
+private:
+
+	vector<vector<size_t>> mSentences;
+	unordered_map<size_t, vector<pair<size_t, size_t>>> mCache;
+
 public:
-	static vector<string> wordBreak(string s, unordered_set<string>& wordDict)
+	vector<string> wordBreak(string s, unordered_set<string>& wordDict)
 	{
 		vector<string> result;
 
 		if (s.length() > 0 && wordDict.size() > 0)
 		{
+			mSentences.clear();
+			mCache.clear();
+
 			TrieNode rootNode;
 			buildTrieTree(&rootNode, wordDict);
 
-			vector<string> prefix;
-			vector<vector<string>> matched;
-			unordered_map<int, vector<pair<int, int>>> cache;
+			vector<size_t> prefix;
+			wordBreak(s, 0, &rootNode, prefix);
 
-			wordBreak(s, 0, &rootNode, prefix, matched, cache);
-
-			for (vector<vector<string>>::iterator it = matched.begin();
-				it != matched.end(); it++)
-			{
-				string sentence;
-				bool firstWord = true;
-
-				for (vector<string>::iterator sit = it->begin();
-					sit != it->end(); sit++)
-				{
-					if (firstWord)
-					{
-						sentence = *sit;
-						firstWord = false;
-					}
-					else
-					{
-						sentence.push_back(' ');
-						sentence.insert(sentence.end(), sit->begin(),
-							sit->end());
-					}
-				}
-
-				result.push_back(sentence);
-			}
+			convert(s, mSentences, result);
 		}
 
 		return result;
 	}
 
-	static void wordBreak(const string& s, int index, TrieNode* root,
-		vector<string>& prefix, vector<vector<string>>& matched,
-		unordered_map<int, vector<pair<int, int>>>& cache)
+	void wordBreak(const string& s, size_t offset, TrieNode* rootNode, vector<size_t>& prefix)
 	{
-		unordered_map<int, vector<pair<int, int>>>::iterator it = cache.find(index);
-
-		if (it != cache.end())
+		if (!hitCache(offset, prefix))
 		{
-			vector<pair<int, int>>& v = it->second;
+			size_t baseline = mSentences.size();
 
-			for (vector<pair<int, int>>::iterator sit = v.begin(); sit != v.end(); sit++)
+			pair<size_t, TrieNode*> word = peekWord(s, offset, rootNode);
+
+			while (word.second != NULL)
 			{
-				vector<string>& m = matched[sit->first];
-				vector<string> temp = prefix;
-
-				temp.insert(temp.end(), m.begin() + sit->second, m.end());
-
-				matched.push_back(temp);
-			}
-
-			return;
-		}
-
-		int backup = index;
-		int start = matched.size();
-
-		TrieNode* wordNode = peekWord(s, index, root);
-
-		while (wordNode != NULL)
-		{
-			if (index >= (int)s.length() - 1)
-			{
-				prefix.push_back(wordNode->word);
-				matched.push_back(prefix);
-				prefix.erase(prefix.end() - 1);
-
-				break;
-			}
-			else
-			{
-				prefix.push_back(wordNode->word);
-				wordBreak(s, index + 1, root, prefix, matched, cache);
-				prefix.erase(prefix.end() - 1);
-
-				if (wordNode->nexts.size() > 0)
+				if (word.first >= s.length() - 1)
 				{
-					index++;
-					wordNode = peekWord(s, index, wordNode);
+					prefix.push_back(word.first);
+					mSentences.push_back(prefix);
+					prefix.pop_back();
+
+					break;
 				}
 				else
 				{
-					break;
+					prefix.push_back(word.first);
+					wordBreak(s, word.first + 1, rootNode, prefix);
+					prefix.pop_back();
+
+					if (word.second->nexts.size() > 0)
+					{
+						word = peekWord(s, word.first + 1, word.second);
+					}
+					else
+					{
+						break;
+					}
 				}
 			}
+
+			updateCache(offset, baseline, prefix.size());
 		}
-
-		int stop = matched.size();
-
-		vector<pair<int, int>> v;
-
-		for (int i = start; i < stop; i++)
-		{
-			v.push_back(pair<int, int>(i, prefix.size()));
-		}
-
-		cache.insert(pair<int, vector<pair<int, int>>>(backup, v));
 	}
 
-	static TrieNode* peekWord(const string& s, int& index, TrieNode* parentNode)
+	inline pair<size_t, TrieNode*> peekWord(const string& s, size_t offset, TrieNode* parentNode)
 	{
+		size_t length = s.length();
 		unordered_map<char, TrieNode*>::iterator it;
 
-		while (index < (int)s.length())
+		while (offset < length)
 		{
-			it = parentNode->nexts.find(s[index]);
+			it = parentNode->nexts.find(s[offset]);
 
 			if (it == parentNode->nexts.end())
 			{
-				return NULL;
+				return pair<size_t, TrieNode*>(0, NULL);
+			}
+			else if (it->second->isWord)
+			{
+				return pair<size_t, TrieNode*>(offset, it->second);
 			}
 
-			if (it->second->isWord)
-			{
-				return it->second;
-			}
-			else
-			{
-				index++;
-				parentNode = it->second;
-			}
+			offset++;
+			parentNode = it->second;
 		}
 
-		return NULL;
+		return pair<size_t, TrieNode*>(0, NULL);
 	}
 
-	static void buildTrieTree(TrieNode* rootNode, const unordered_set<string>& words)
+	inline bool hitCache(size_t offset, vector<size_t>& prefix)
 	{
-		for (unordered_set<string>::const_iterator it = words.begin(); it != words.end(); it++)
+		unordered_map<size_t, vector<pair<size_t, size_t>>>::iterator it = mCache.find(offset);
+
+		if (it != mCache.end())
+		{
+			size_t original = prefix.size();
+
+			vector<pair<size_t, size_t>>& content = it->second;
+
+			for (vector<pair<size_t, size_t>>::iterator sit = content.begin(); sit != content.end(); ++sit)
+			{
+				vector<size_t>& match = mSentences[sit->first];
+				prefix.insert(prefix.end(), match.begin() + sit->second, match.end());
+				mSentences.push_back(prefix);
+				prefix.erase(prefix.begin() + original, prefix.end());
+			}
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	inline void updateCache(size_t offset, size_t baseline, size_t position)
+	{
+		size_t current = mSentences.size();
+		vector<pair<size_t, size_t>>content;
+
+		for (size_t i = baseline; i < current; i++)
+		{
+			content.push_back(pair<size_t, size_t>(i, position));
+		}
+
+		mCache.insert(pair<size_t, vector<pair<size_t, size_t>>>(offset, content));
+	}
+
+	void buildTrieTree(TrieNode* rootNode, const unordered_set<string>& words)
+	{
+		for (unordered_set<string>::const_iterator it = words.begin(); it != words.end(); ++it)
 		{
 			insertNode(rootNode, *it);
 		}
 	}
 
-	static void insertNode(TrieNode* rootNode, const string& s)
+	void insertNode(TrieNode* rootNode, const string& s)
 	{
 		if (s.length() == 0)
 		{
@@ -180,69 +170,95 @@ public:
 
 		TrieNode* current = rootNode;
 
-		for (string::const_iterator it = s.begin(); it != s.end(); it++)
+		for (string::const_iterator it = s.begin(); it != s.end(); ++it)
 		{
-			unordered_map<char, TrieNode*>::iterator cit = current->nexts.find(*it);
+			unordered_map<char, TrieNode*>& nexts = current->nexts;
+			unordered_map<char, TrieNode*>::iterator nit = nexts.find(*it);
 
-			if (cit == current->nexts.end())
+			if (nit == nexts.end())
 			{
 				TrieNode* newNode = new TrieNode();
-
-				current->nexts.insert(pair<char, TrieNode*>(*it, newNode));
-
+				nexts.insert(pair<char, TrieNode*>(*it, newNode));
 				current = newNode;
 			}
 			else
 			{
-				current = (*cit).second;
+				current = (*nit).second;
 			}
 		}
 
 		current->isWord = true;
-		current->word = s;
 	}
 
-	static void print(vector<string>& vectors)
+	void convert(const string& s, vector<vector<size_t>>& vv, vector<string>& v)
 	{
-		for (vector<string>::iterator it = vectors.begin(); it != vectors.end();
-			it++)
+		for (vector<vector<size_t>>::iterator it = vv.begin(); it != vv.end(); ++it)
 		{
-			printf("%s\n", (*it).c_str());
+			string ss = s;
+			vector<size_t>::reverse_iterator sit = it->rbegin();
+
+			if (sit != it->rend())
+			{
+				++sit;
+
+				for (; sit != it->rend(); ++sit)
+				{
+					ss.insert(*sit + 1, 1, ' ');
+				}
+
+				v.push_back(ss);
+			}
 		}
 	}
 };
 
-void test2(string)
+void print(vector<string>& vectors)
 {
-	string list2[] = { "a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa", "aaaaaaaaa", "aaaaaaaaaa" };
+	for (vector<string>::iterator it = vectors.begin(); it != vectors.end(); ++it)
+	{
+		printf("%s\n", (*it).c_str());
+	}
+}
 
-	unordered_set<string> dict(list2, list2 + sizeof(list2) / sizeof(string));
+void test(string& s, string* words, int wordSize, size_t expected)
+{
+	unordered_set<string> wordDict(words, words + wordSize);
+	Solution solution;
+	vector<string> result = solution.wordBreak(s, wordDict);
+	printf(result.size() == expected ? "Okay\n" : "Failed\n");
+	print(result);
+}
 
+void test1()
+{
+	string words[] = { "cat", "cats", "and", "sand", "dog" };
+	string s = "catsanddog";
+	test(s, words, sizeof(words) / sizeof(string), 2);
+}
 
-	string s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-	vector<string> result = Solution::wordBreak(s, dict);
-
-	Solution::print(result);
+void test2()
+{
+	string words[] = { "a", "aa", "aaa", "aaaa", "aaaaa", "aaaaaa", "aaaaaaa", "aaaaaaaa", "aaaaaaaaa", "aaaaaaaaaa" };
+	string s =
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	test(s, words, sizeof(words) / sizeof(string), 0);
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	unordered_set<string> dict;
-	vector<string> result;
+	StopWatch sw;
 
-	string list[] = { "cat", "cats", "and", "sand", "dog" };
+	sw.start();
 
-	for (int i = 0; i < sizeof(list) / sizeof(string); i++)
+	for (int i = 0; i < 10; i++)
 	{
-		dict.insert(list[i]);
+		test1();
+		test2();
 	}
 
-	result = Solution::wordBreak("catsanddog", dict);
+	sw.stop();
 
-	Solution::print(result);
-
-
+	printf("%d\n", (int)sw.getElapsed());
 
 	return 0;
 }

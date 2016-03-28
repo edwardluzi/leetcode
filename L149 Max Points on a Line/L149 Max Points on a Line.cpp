@@ -11,113 +11,96 @@ struct Point
 {
 	int x;
 	int y;
-	Point() : x(0), y(0) {}
-	Point(int a, int b) : x(a), y(b) {}
+	Point() :
+		x(0), y(0)
+	{
+	}
+	Point(int a, int b) :
+		x(a), y(b)
+	{
+	}
 };
+
+#if VS2013
+#define INT64 __int64
+#else
+#define INT64 long long
+#endif
 
 class Solution
 {
+private:
+
+	static const INT64 VERT = (INT64)0x7FFFFFFFFFFFFFFF;
+
 public:
-	static int maxPoints(vector<Point>& points) 
+	static int maxPoints(vector<Point>& points)
 	{
-		if (points.size() <= 1)
+		if (points.size() <= 2)
 		{
 			return points.size();
 		}
 
 		int length = (int)points.size();
-		unordered_map<string, unordered_set<int>> lines;
 
-		bool vertical;
-		double slope;
-		double ordinate;
-		string key;
-		unordered_map<string, unordered_set<int>>::iterator it;
+		int max = 0;
+		int same = 0;
+		INT64 slope = 0;
+		unordered_map<INT64, int> lines;
 
 		for (int i = 0; i < length - 1; i++)
 		{
 			for (int j = i + 1; j < length; j++)
 			{
-				calculate(points[i], points[j], slope, ordinate, vertical);
-
-				key = toString(slope, ordinate, vertical);
-
-				it = lines.find(key);
-
-				if (it == lines.end())
+				if (calculate(points[i], points[j], slope))
 				{
-					unordered_set<int> set;
-					set.insert(i);
-					set.insert(j);
-					lines.insert(pair<string, unordered_set<int>>(key, set));
+					++lines[slope];
 				}
 				else
 				{
-					unordered_set<int>& set = (*it).second;
-
-					if (set.find(i) == set.end())
-					{
-						set.insert(i);
-					}
-
-					if (set.find(j) == set.end())
-					{
-						set.insert(j);
-					}
+					same++;
 				}
 			}
-		}
 
-		int max = 0;
-
-		for (unordered_map<string, unordered_set<int>>::iterator it = lines.begin(); it != lines.end(); it++)
-		{
-			int size = (*it).second.size();
-
-			if (size > max)
+			if (lines.size() > 0)
 			{
-				max = size;
+				for (auto& line : lines)
+				{
+					max = (line.second + same) > max ? (line.second + same) : max;
+				}
 			}
+			else
+			{
+				max = same > max ? same : max;
+			}
+
+			lines.clear();
+			same = 0;
 		}
 
-		return max;
+		return max + 1;
 	}
 
-	inline static string toString(double slope, double ordinate, bool vertical)
+	inline static bool calculate(const Point& p1, const Point& p2, INT64& slope)
 	{
-		static char buffer[32];
-
-		if (vertical)
+		if (p2.x == p1.x && p2.y == p1.y)
 		{
-			sprintf_s(buffer, 32, "vertical, %.8f", ordinate);
+			return false;
 		}
-		else
+		else if (p2.x == p1.x)
 		{
-			sprintf_s(buffer, 32, "%.8f, %.8f", slope, ordinate);
-		}
-
-		return string(buffer);
-	}
-
-	inline static void calculate(const Point& p1, const Point& p2, double& slope, double & ordinate, bool& vertical)
-	{
-		if (p2.x == p1.x)
-		{
-			vertical = true;
-			ordinate = p1.x;
+			slope = true;
 		}
 		else if (p2.y == p1.y)
 		{
-			vertical = false;
-			slope = 0;
-			ordinate = p2.y;
+			slope = VERT;
 		}
 		else
 		{
-			vertical = false;
-			slope = (double)(p2.y - p1.y) / (double)(p2.x - p1.x);
-			ordinate = p2.y - p2.x * slope;
+			slope = (INT64)(((float)(p2.y - p1.y) / (float)(p2.x - p1.x)) * 100000000);
 		}
+
+		return true;
 	}
 };
 
@@ -132,8 +115,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	points.push_back(Point(2, 3));
 	points.push_back(Point(1, 3));
 
-	int count = Solution::maxPoints(points);
+	int max = Solution::maxPoints(points);
+
+	printf(max == 4 ? "Okay\n" : "Failed\n");
+
+	points.clear();
+
+	points.push_back(Point(0, 0));
+	points.push_back(Point(0, 0));
+	points.push_back(Point(0, 0));
+
+	max = Solution::maxPoints(points);
+
+	printf(max == 3 ? "Okay\n" : "Failed\n");
 
 	return 0;
 }
-

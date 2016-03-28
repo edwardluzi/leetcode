@@ -1,203 +1,251 @@
 #include "stdafx.h"
 
 #include <string>
-#include <sstream>;
-#include <vector>
+#include <list>
 
 using namespace std;
 
 class Solution
 {
 public:
-	static bool isMatch(string s, string p) {
+	static bool isMatch(string s, string p)
+	{
+		int count = 0;
+		bool begining = false;
+		bool ending = false;
 
-		bool match = true;
+		list<string> elements = split(p, '*', count, begining, ending);
 
-		if (p.find('*') == string::npos)
+		if (count > 0)
 		{
-			match = isMatch1(s, p);
+			if (elements.size() == 0)
+			{
+				return true;
+			}
+
+			return isMatch(s, elements, p, begining, ending);
 		}
 		else
 		{
-			match = isMatch2(s, p);
+			return matchPart(s, 0, s.length(), p);
 		}
-
-		return match;
 	}
 
-	static bool isMatch1(const string& s, const string& p)
+	static bool matchPart(const string& s, size_t start, size_t end, const string& p)
 	{
-		int length = s.length();
-
-		if (length != p.length())
+		if (end - start != p.length())
 		{
 			return false;
 		}
 		else
 		{
-			for (int i = 0; i < length; i++)
+			for (; start < end; start++)
 			{
-				if (s[i] != p[i] && p[i] != '?')
+				if (s[start] == p[start] || p[start] == '?')
 				{
-					return false;
+					continue;
 				}
+
+				return false;
 			}
+
+			return true;
+		}
+	}
+
+	static bool isMatch(string& s, list<string>& elements, const string& p, bool beginingWithStar, bool endingWithStar)
+	{
+		if (!beginingWithStar && !matchBegining(s, elements, p))
+		{
+			return false;
+		}
+
+		if (elements.size() == 0)
+		{
+			return true;
+		}
+
+		if (!endingWithStar && !matchEnding(s, elements, p))
+		{
+			return false;
+		}
+
+		if (elements.size() == 0)
+		{
+			return true;
+		}
+
+		size_t offset = 0;
+
+		for (list<string>::iterator it = elements.begin(); it != elements.end(); ++it)
+		{
+			if (!matchPart(s, offset, *it))
+			{
+				return false;
+			}
+
+			offset += it->length();
 		}
 
 		return true;
 	}
 
-	static bool isMatch2(string s, const string& p)
+	static bool matchPart(const string& s, size_t& offset, const string& p)
 	{
-		vector<string> elements = split(p, '*');
+		size_t patLength = p.length();
+		size_t strLength = s.length();
 
-		if (elements.size() == 00)
+		if (strLength - offset < patLength)
 		{
-			return true;
+			return false;
 		}
 
-		string::iterator its = s.begin();
+		while (offset <= strLength - patLength)
+		{
+			bool match = true;
 
-		string& firstElement = elements[0];
-		int firstLength = firstElement.length();
+			for (size_t i = 0; i < patLength; i++)
+			{
+				if (s[offset + i] == p[i] || p[i] == '?')
+				{
+					continue;
+				}
 
-		if (p.substr(0, firstLength) == firstElement)
+				match = false;
+				break;
+			}
+
+			if (match)
+			{
+				return true;
+			}
+			else
+			{
+				offset++;
+			}
+		}
+
+		return false;
+	}
+
+	static bool matchBegining(string& s, list<string>& elements, const string& p)
+	{
+		const string& first = elements.front();
+		size_t firstLength = first.length();
+
+		if (p.substr(0, firstLength) == first)
 		{
 			if (s.length() < firstLength)
 			{
 				return false;
 			}
 
-			for (int i = 0; i < firstLength; i++)
+			for (size_t i = 0; i < firstLength; i++)
 			{
-				if (s[i] != firstElement[i] && firstElement[i] != '?')
+				if (s[i] == first[i] || first[i] == '?')
 				{
-					return false;
+					continue;
 				}
-			}
 
-			s = s.substr(firstLength);
-
-			elements.erase(elements.begin());
-		}
-
-		if (elements.size() == 0)
-		{
-			return true;
-		}
-
-		string& lastElement = elements[elements.size() - 1];
-		int lastLength = lastElement.length();
-
-		if (p.substr(p.length() - lastLength, lastLength) == lastElement)
-		{
-			if (s.length() < lastLength)
-			{
 				return false;
 			}
 
-			string suffix = s.substr(s.length() - lastLength);
-
-			for (int i = 0; i < lastLength; i++)
-			{
-				if (suffix[i] != lastElement[i] && lastElement[i] != '?')
-				{
-					return false;
-				}
-			}
-
-			s = s.substr(0, s.length() - lastLength);
-			elements.erase(elements.end() - 1);
-		}
-
-		if (elements.size() == 0)
-		{
-			return true;
-		}
-
-		int offset = 0;
-
-		for (vector<string>::iterator it = elements.begin(); it != elements.end(); it++)
-		{
-			string& ss = *it;
-			int length = ss.length();
-
-			while (offset <= (int)s.length() - (int)ss.length())
-			{
-				bool match = true;
-
-				for (int i = 0; i < length; i++)
-				{
-					if (s[offset + i] != ss[i] && ss[i] != '?')
-					{
-						match = false;
-						break;
-					}
-				}
-
-				if (match)
-				{
-					break;
-				}
-				else
-				{
-					offset++;
-				}
-			}
-
-
-			if (offset > (int)s.length() - (int)ss.length())
-			{
-				return false;
-			}
-
-			offset += ss.length();
+			s.erase(0, firstLength);
+			elements.pop_front();
 		}
 
 		return true;
 	}
 
-
-	static vector<string> split(const string& s, char delim)
+	static bool matchEnding(string& s, list<string>& elements, const string& p)
 	{
-		vector<string> elems;
-		stringstream ss(s);
-		string item;
+		const string& last = elements.back();
+		size_t lastLength = last.length();
 
-		while (getline(ss, item, delim))
+		if (p.substr(p.length() - lastLength, lastLength) == last)
 		{
-			if (item.length() == 0)
+			size_t strLength = s.length();
+
+			if (strLength < lastLength)
 			{
-				continue;
+				return false;
 			}
 
-			elems.push_back(item);
+			string suffix = s.substr(strLength - lastLength);
+
+			for (size_t i = 0; i < lastLength; i++)
+			{
+				if (suffix[i] == last[i] || last[i] == '?')
+				{
+					continue;
+				}
+
+				return false;
+			}
+
+			s.erase(strLength - lastLength, lastLength);
+			elements.pop_back();
 		}
 
-		return elems;
+		return true;
+	}
+
+	static list<string> split(const string& s, const char delimiter, int& count, bool& beginingWithDelimiter,
+		bool& endingWithDelimiter)
+	{
+		list<string> elements;
+		size_t len = s.length();
+		size_t start = 0;
+		size_t end = s.find_first_of(delimiter);
+
+		while (end != string::npos)
+		{
+			if (end == 0)
+			{
+				beginingWithDelimiter = true;
+			}
+			else if (end == len - 1)
+			{
+				endingWithDelimiter = true;
+			}
+
+			if (end > start)
+			{
+				elements.emplace_back(s.substr(start, end - start));
+			}
+
+			start = end + 1;
+			end = s.find_first_of(delimiter, start);
+			count++;
+		}
+
+		elements.emplace_back(s.substr(start, end - start));
+
+		return elements;
 	}
 };
 
-int _tmain(int argc, _TCHAR* argv[])
+void test(string s, string p, bool expected)
 {
-	Solution::isMatch("b", "*a*");
-
-	Solution::isMatch("abefcdgiescdfimde", "ab*cd?i*de");
-
-
-
-	Solution::isMatch("b", "*?*?");
-
-	
-	
-	Solution::isMatch("aa", "a");
-	Solution::isMatch("aa", "aa");
-	Solution::isMatch("aaa", "aa");
-	Solution::isMatch("aa", "*");
-	Solution::isMatch("aa", "**");
-	Solution::isMatch("ab", "?*");
-	Solution::isMatch("aab", "c*a*b");
-	Solution::isMatch("aab", "a*a*b");
-	return 0;
+	printf("%s, %s ==> %s\n", s.c_str(), p.c_str(), Solution::isMatch(s, p) == expected ? "Okay" : "Failed");
 }
 
+int _tmain(int argc, _TCHAR* argv[])
+{
+	test("b", "*a", false);
+	test("b", "a*", false);
+	test("b", "b", true);
+	test("b", "*", true);
+	test("abefcdgiescdfimde", "ab*cd?i*de", true);
+	test("b", "*?*?", false);
+	test("aa", "a", false);
+	test("aa", "aa", true);
+	test("aaa", "aa", false);
+	test("aa", "*", true);
+	test("aa", "**", true);
+	test("ab", "?*", true);
+	test("aab", "c*a*b", false);
+	test("aab", "a*a*b", true);
+
+	return 0;
+}

@@ -8,7 +8,8 @@ struct TreeNode
 	int val;
 	TreeNode *left;
 	TreeNode *right;
-	TreeNode(int x) : val(x), left(NULL), right(NULL)
+	explicit TreeNode(int x) :
+		val(x), left(NULL), right(NULL)
 	{
 	}
 };
@@ -32,30 +33,27 @@ public:
 			visit(node->right, order);
 		}
 	}
-
-	static void print(string name, vector<int>& vectors)
-	{
-		bool firstNumber = true;
-
-		printf("%s: ", name.c_str());
-
-		for (vector<int>::iterator it = vectors.begin(); it != vectors.end(); it++)
-		{
-			if (firstNumber)
-			{
-				printf("%d", *it);
-				firstNumber = false;
-			}
-			else
-			{
-				printf(", %d", *it);
-			}
-		}
-
-		printf("\n");
-	}
 };
 
+static void print(string name, vector<int>& vectors)
+{
+	printf("%s: ", name.c_str());
+
+	vector<int>::iterator it = vectors.begin();
+
+	if (it != vectors.end())
+	{
+		printf("%d", *it);
+		++it;
+	}
+
+	for (; it != vectors.end(); ++it)
+	{
+		printf(", %d", *it);
+	}
+
+	printf("\n");
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -65,8 +63,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	vector<int> result = Solution::preorderTraversal(root);
 
-	Solution::print("", result);
+	print("", result);
 
 	return 0;
 }
-

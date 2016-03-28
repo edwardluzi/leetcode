@@ -1,11 +1,10 @@
 #include "stdafx.h"
 
-#include <vector>
-#include <stack>
-#include <string>
-#include <numeric>
 #include <algorithm>
-#include <fstream>
+#include <cstdio>
+#include <iterator>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -20,53 +19,47 @@ public:
 		}
 
 		string reversed = s;
-
 		reverse(reversed.begin(), reversed.end());
 
-		vector<int> table;
+		if (reversed == s)
+		{
+			return s;
+		}
 
-		buildTable(s, table);
+		vector<int> table;
+		buildKmpTable(s, table);
 
 		int position = search(reversed, s, table);
 
 		return reversed.substr(0, position).append(s);
 	}
 
-	static void print(string name, vector<int>& vectors)
+	static void buildKmpTable(const string& w, vector<int>& t)
 	{
-		bool firstNumber = true;
+		int pos = 2;
+		int cnd = 0;
+		int len = w.length();
 
-		printf("%s: ", name.c_str());
+		t.resize(len, 0);
 
-		for (vector<int>::iterator it = vectors.begin(); it != vectors.end(); it++)
+		t[0] = -1;
+		t[1] = 0;
+
+		while (pos < len)
 		{
-			if (firstNumber)
+			if (w[pos - 1] == w[cnd])
 			{
-				printf("%d", *it);
-				firstNumber = false;
+				t[pos] = ++cnd;
+				pos++;
+			}
+			else if (cnd > 0)
+			{
+				cnd = t[cnd];
 			}
 			else
 			{
-				printf(", %d", *it);
-			}
-		}
-
-		printf("\n");
-	}
-
-	static void buildTable(const string& pattern, vector<int>& table)
-	{
-		table.resize(pattern.length() + 1, 0);
-
-		table[0] = -1;
-
-		for (int i = 0; i < (int)pattern.length(); i++)
-		{
-			table[i + 1] = table[i] + 1;
-
-			while (table[i + 1] > 0 && pattern[i] != pattern[table[i + 1] - 1])
-			{
-				table[i + 1] = table[table[i + 1] - 1] + 1;
+				t[pos] = 0;
+				pos++;
 			}
 		}
 	}
@@ -75,8 +68,9 @@ public:
 	{
 		int i = 0;
 		int j = 0;
+		int l = (int)text.length();
 
-		while (i < (int)text.length())
+		while (i < l)
 		{
 			if (j < 0 || text[i] == pattern[j])
 			{
@@ -92,22 +86,43 @@ public:
 	}
 };
 
-void test(string s)
+void print(string name, vector<int>& vectors)
 {
+	printf("%s: ", name.c_str());
+
+	vector<int>::iterator it = vectors.begin();
+
+	if (it != vectors.end())
+	{
+		printf("%d", *it);
+		++it;
+	}
+
+	for (; it != vectors.end(); ++it)
+	{
+		printf(", %d", *it);
+	}
+
+	printf("\n");
+}
+
+void test(string s, string expected)
+{
+	string result = Solution::shortestPalindrome(s);
 	printf("Original  : %s\n", s.c_str());
-	printf("Palindrome: %s\n", Solution::shortestPalindrome(s).c_str());
+	printf("Palindrome: %s\n", result.c_str());
+	printf(expected == result ? "Okay\n" : "Failed\n");
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	test("");
-	test("abacab");
-	test("aacecaaa");
-	test("abcd");
-	test("abbacd");
-	test("3211234");
-	test(string(40014, 'a'));
-	test(string(40015, 'a'));
+	test("", "");
+	test("abacab", "bacabacab");
+	test("aacecaaa", "aaacecaaa");
+	test("abcd", "dcbabcd");
+	test("abbacd", "dcabbacd");
+	test("3211234", "43211234");
+	test("aaa", "aaa");
 
 	return 0;
 }

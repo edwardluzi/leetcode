@@ -1,7 +1,6 @@
-
 #include "stdafx.h"
 
-class Solution 
+class Solution
 {
 public:
 	static bool isPowerOfTwo(int n)
@@ -12,10 +11,10 @@ public:
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	bool a = Solution::isPowerOfTwo(1);
-	a = Solution::isPowerOfTwo(2);
-	a = Solution::isPowerOfTwo(6);
-	a = Solution::isPowerOfTwo(8);
+	printf(Solution::isPowerOfTwo(1) ? "Okay\n" : "Failed");
+	printf(Solution::isPowerOfTwo(2) ? "Okay\n" : "Failed");
+	printf(!Solution::isPowerOfTwo(6) ? "Okay\n" : "Failed");
+	printf(Solution::isPowerOfTwo(8) ? "Okay\n" : "Failed");
 
 	return 0;
 }

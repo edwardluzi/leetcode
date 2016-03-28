@@ -7,22 +7,32 @@ using namespace std;
 
 class Solution
 {
+private:
+
+	const int MinValue = (int)0x80000000;
+
+private:
+
+	int mWidth;
+	int mHeight;
+	vector<vector<int>> mCache;
+
 public:
 
-	static const int MinValue = (int)0x80000000;
+	Solution() :mWidth(0), mHeight(0){}
 
 public:
-	static int calculateMinimumHP(vector<vector<int>>& dungeon)
+
+	int calculateMinimumHP(vector<vector<int>>& dungeon)
 	{
-		if (dungeon.size() == 0 || dungeon[0].size() == 0)
+		if ((mHeight = dungeon.size()) == 0 || (mWidth = dungeon[0].size()) == 0)
 		{
 			return 0;
 		}
 
-		unordered_map<string, int> cache;
+		mCache.resize(mHeight, vector<int>(mWidth, MinValue));
 
-		int hp = calculateMinimumHP(dungeon, dungeon[0].size(), dungeon.size(),
-			0, 0, cache);
+		int hp = calculateMinimumHP(dungeon, 0, 0);
 
 		if (hp <= 0)
 		{
@@ -34,56 +44,36 @@ public:
 		}
 	}
 
-	static int calculateMinimumHP(vector<vector<int>>& dungeon, int width,
-		int height, int x, int y, unordered_map<string, int>& cache)
+	int calculateMinimumHP(vector<vector<int>>& dungeon, int x, int y)
 	{
-		if (x == width - 1 && y == height - 1)
+		if (x == mWidth - 1 && y == mHeight - 1)
 		{
 			return dungeon[y][x];
 		}
 		else
 		{
-			string key = makeKey(x, y);
-			unordered_map<string, int>::iterator it = cache.find(key);
+			int hp = mCache[y][x];
 
-			if (it != cache.end())
+			if (hp != MinValue)
 			{
-				return it->second;
+				return hp;
 			}
 
-			int hp1 =
-				(x < width - 1) ?
-				calculateMinimumHP(dungeon, width, height, x + 1, y,
-				cache) :
-				MinValue;
-
-			int hp2 =
-				(y < height - 1) ?
-				calculateMinimumHP(dungeon, width, height, x, y + 1,
-				cache) :
-				MinValue;
-
+			int hp1 = (x < mWidth - 1) ? calculateMinimumHP(dungeon, x + 1, y) : MinValue;
+			int hp2 = (y < mHeight - 1) ? calculateMinimumHP(dungeon, x, y + 1) : MinValue;
 			int cur = dungeon[y][x];
-			int hp = (hp1 > hp2 ? hp1 : hp2) + cur;
 
-			hp = hp <= cur ? hp : cur;
+			hp = (hp1 > hp2 ? hp1 : hp2) + cur;
 
-			cache.insert(pair<string, int>(key, hp));
+			if (hp > cur)
+			{
+				hp = cur;
+			}
+
+			mCache[y][x] = hp;
 
 			return hp;
 		}
-	}
-
-	static string makeKey(int x, int y)
-	{
-		static char buffer[64];
-
-#if VS2013
-		sprintf_s(buffer, 63, "%d,%d", x, y);
-#else
-		sprintf(buffer, "%d,%d", x, y);
-#endif
-		return string(buffer);
 	}
 };
 
@@ -99,7 +89,9 @@ void test1()
 	dungeon.push_back(vector<int>(row2, row2 + sizeof(row2) / sizeof(int)));
 	dungeon.push_back(vector<int>(row3, row3 + sizeof(row3) / sizeof(int)));
 
-	int result = Solution::calculateMinimumHP(dungeon);
+	Solution s;
+
+	int result = s.calculateMinimumHP(dungeon);
 
 	printf(result == 7 ? "Okay - %d \n" : "Failed - %d\n", result);
 }
@@ -112,7 +104,9 @@ void test2()
 
 	dungeon.push_back(vector<int>(row1, row1 + sizeof(row1) / sizeof(int)));
 
-	int result = Solution::calculateMinimumHP(dungeon);
+	Solution s;
+
+	int result = s.calculateMinimumHP(dungeon);
 
 	printf(result == 201 ? "Okay - %d \n" : "Failed - %d\n", result);
 }
@@ -125,7 +119,9 @@ void test3()
 
 	dungeon.push_back(vector<int>(row1, row1 + sizeof(row1) / sizeof(int)));
 
-	int result = Solution::calculateMinimumHP(dungeon);
+	Solution s;
+
+	int result = s.calculateMinimumHP(dungeon);
 
 	printf(result == 1 ? "Okay - %d \n" : "Failed - %d\n", result);
 }

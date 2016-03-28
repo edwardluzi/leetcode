@@ -47,6 +47,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L096 Unique Binary Search T
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L086 Partition List", "L086 Partition List\L086 Partition List.vcxproj", "{1E51B3C4-3C11-456F-999E-2BEBEF58BAA0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "L282 Expression Add Operators", "L282 Expression Add Operators\L282 Expression Add Operators.vcxproj", "{8EFE92C4-66B8-4DD6-98F8-453A5A619A59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -141,6 +143,10 @@ Global
 		{1E51B3C4-3C11-456F-999E-2BEBEF58BAA0}.Debug|Win32.Build.0 = Debug|Win32
 		{1E51B3C4-3C11-456F-999E-2BEBEF58BAA0}.Release|Win32.ActiveCfg = Release|Win32
 		{1E51B3C4-3C11-456F-999E-2BEBEF58BAA0}.Release|Win32.Build.0 = Release|Win32
+		{8EFE92C4-66B8-4DD6-98F8-453A5A619A59}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8EFE92C4-66B8-4DD6-98F8-453A5A619A59}.Debug|Win32.Build.0 = Debug|Win32
+		{8EFE92C4-66B8-4DD6-98F8-453A5A619A59}.Release|Win32.ActiveCfg = Release|Win32
+		{8EFE92C4-66B8-4DD6-98F8-453A5A619A59}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
